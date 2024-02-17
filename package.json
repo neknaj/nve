@@ -1,0 +1,33 @@
+{
+  "name": "nve",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@tailwindcss/nesting": "^0.0.0-insiders.565cd3e",
+    "@tauri-apps/api": "^1.5.2",
+    "@webgpu/types": "^0.1.40",
+    "ace-builds": "^1.32.6",
+    "postcss": "^8.4.35",
+    "react": "^18.2.0",
+    "react-ace": "^10.1.0",
+    "react-dom": "^18.2.0",
+    "tailwindcss": "^3.4.1"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^1.5.8",
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.2.1",
+    "postcss-import": "^16.0.1",
+    "postcss-nesting": "^12.0.2",
+    "typescript": "^5.0.2",
+    "vite": "^5.0.0"
+  }
+}
