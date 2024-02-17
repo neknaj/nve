@@ -1,8 +1,8 @@
-import React, { ReactNode, useState, useCallback } from "react";
+import React, { ReactElement, useState, useCallback } from "react";
 
 interface ResizableProps {
     orientation: "horizontal" | "vertical";
-    children: ReactNode[];
+    children: [((size: number) => ReactElement), ReactElement];
 }
 
 const Resizable: React.FC<ResizableProps> = ({ orientation, children }) => {
@@ -53,7 +53,7 @@ const Resizable: React.FC<ResizableProps> = ({ orientation, children }) => {
             }`}
         >
             <div className="flex flex-grow" style={{ flexBasis: `${size}%` }}>
-                {children[0]}
+                {children[0](size)}
             </div>
             <div
                 className={`bg-gray-500 ${

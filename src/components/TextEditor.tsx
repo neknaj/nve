@@ -9,6 +9,7 @@ import "ace-builds/src-noconflict/ext-language_tools";
 const TextEditor = () => {
     return (
         <AceEditor
+            setOptions={{ useWorker: false }}
             mode="javascript"
             theme="cobalt"
             onChange={(e) => console.log(e)}

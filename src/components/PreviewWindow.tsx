@@ -1,33 +1,13 @@
-import ListIcon from "../assets/react.svg";
-import React, { useState, useEffect } from "react";
-const PreviewWindow = ({ timeline, currentFrame }) => {
+import React, { useState, useEffect, useRef } from "react";
+const PreviewWindow = ({ timeline, currentFrame, size }) => {
     console.log("frame:" + currentFrame, timeline);
-
-    // ビデオ設定の変数
-    let videoConfig = {
-        height: 1080, // ビデオの高さ
-        width: 1920, // ビデオの幅
-    };
-    const style = {
-        marginTop: "100px",
-    } as React.CSSProperties;
-    return (
-        <div className="w-full bg-slate-800">
-            <img src={ListIcon} />
-            <MyComponent />
-        </div>
-    );
-};
-
-export default PreviewWindow;
-
-function MyComponent() {
-    const [loading, setLoading] = useState(true); // ローディング状態の追跡
+    const imgOutRef = useRef(null);
+    const imgOutAreaRef = useRef(null);
+    const timelineRef = useRef(null);
 
     useEffect(() => {
         const setupCanvas = async () => {
             const canvas = document.querySelector("canvas");
-            setLoading(true);
             const adapter = await navigator.gpu.requestAdapter();
             if (!adapter) {
                 throw new Error("No appropriate GPUAdapter found.");
@@ -101,10 +81,10 @@ fn vertexMain(@location(0) pos: vec2f,
   return vec4f(gridPos, 0, 1);
 }
 
-        @fragment
-        fn fragmentMain() -> @location(0) vec4f {
-            return vec4f(1, 0, 0, 1);
-        }
+@fragment
+fn fragmentMain() -> @location(0) vec4f {
+    return vec4f(1, 0, 0, 1);
+}
   `,
             });
             const cellPipeline = device.createRenderPipeline({
@@ -157,24 +137,76 @@ fn vertexMain(@location(0) pos: vec2f,
             const commandBuffer = encoder.finish();
             device.queue.submit([commandBuffer]);
             device.queue.submit([encoder.finish()]);
-
-            setLoading(false);
         };
 
         setupCanvas();
     }, []);
 
-    if (loading) {
-        return (
-            <div>
-                <canvas></canvas>
-            </div>
-        );
-    }
+    //サイズが変更されたときのリサイズ
+    useEffect(() => {
+        const resize = () => {
+            let imgOutArea = document.getElementById("imgOutArea");
+            // videoConfig から幅と高さを取得
+            const { height: dh, width: dw } = videoConfig;
+            let rw = 0,
+                rh = 0;
+            const parent = imgOutArea.getBoundingClientRect();
+            const margin = 20;
+            const ww = parent.width - margin;
+            const wh = parent.height - margin;
+            let csc = 1;
+            const hcsc = ww / dw;
+            const wcsc = wh / dh;
 
+            if (hcsc > wcsc) {
+                csc = wcsc;
+                rw = (ww - dw * csc) / 2;
+            } else {
+                csc = hcsc;
+                rh = (wh - dh * csc) / 2;
+            }
+
+            // 直接スタイルを更新
+            const imgOutEl = imgOutRef.current;
+            imgOutEl.height = `${dh}`;
+            imgOutEl.width = `${dw}`;
+            imgOutEl.style.marginTop = `${rh}px`;
+            imgOutEl.style.marginBottom = `${rh}px`;
+            imgOutEl.style.marginLeft = `${rw}px`;
+            imgOutEl.style.marginRight = `${rw}px`;
+            imgOutEl.style.transform = `scale(${csc},${csc})`;
+
+            // Timeline スタイルの更新
+            const timelineEl = timelineRef.current;
+            if (timelineEl) {
+                timelineEl.style.setProperty(
+                    "--tl-timebar-height",
+                    `${Math.max(timelineEl.getBoundingClientRect().height - 13)}px`
+                );
+            }
+        };
+
+        // イベントリスナーを設定
+        window.addEventListener("resize", resize);
+
+        // 最初のリサイズをトリガー
+        resize();
+
+        // クリーンアップ関数
+        return () => {
+            window.removeEventListener("resize", resize);
+        };
+    }, [size]);
+
+    // ビデオ設定の変数
+    let videoConfig = {
+        height: 1080, // ビデオの高さ
+        width: 1920, // ビデオの幅
+    };
     return (
-        <div>
-            <canvas></canvas>
+        <div className="w-full bg-slate-8000" ref={imgOutAreaRef}>
+            <canvas id="imgOut" ref={imgOutRef}></canvas>
         </div>
     );
-}
+};
+export default PreviewWindow;
