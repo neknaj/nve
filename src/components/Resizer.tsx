@@ -1,16 +1,12 @@
-import React, { ReactElement, useState, useCallback } from "react";
+import React, { useState, useCallback, ReactNode } from "react";
 
 interface ResizableProps {
     orientation: "horizontal" | "vertical";
-    children: [((size: number) => ReactElement), ReactElement];
+    children: ReactNode | [ReactNode, ReactNode]; // ReactNode は関数コンポーネントまたは JSX エレメントを含む
+    onResize: (size: number) => void | undefined;
 }
 
-const Resizable: React.FC<ResizableProps> = ({ orientation, children }) => {
-    if (children.length !== 2) {
-        console.error("Resizable component expects exactly two children.");
-        return null;
-    }
-
+const Resizable: React.FC<ResizableProps> = ({ orientation, children, onResize }) => {
     const [size, setSize] = useState(50); // パーセンテージで初期サイズを設定
 
     const startResize = useCallback(
@@ -33,6 +29,7 @@ const Resizable: React.FC<ResizableProps> = ({ orientation, children }) => {
                     newSize = Math.min(100, Math.max(0, startSize + percentY));
                 }
                 setSize(newSize);
+                onResize(newSize);
             };
 
             const stopResize = () => {
@@ -52,20 +49,20 @@ const Resizable: React.FC<ResizableProps> = ({ orientation, children }) => {
                 orientation === "horizontal" ? "flex-row w-full" : "flex-col h-full"
             }`}
         >
-            <div className="flex flex-grow" style={{ flexBasis: `${size}%` }}>
-                {children[0](size)}
+            <div className="flex-grow" style={{ flexBasis: `${size}%` }}>
+                {children[0]}
             </div>
             <div
                 className={`bg-gray-500 ${
                     orientation === "horizontal" ? "cursor-e-resize" : "cursor-ns-resize"
                 }`}
+                onMouseDown={startResize}
                 style={{
                     width: orientation === "horizontal" ? "4px" : "100%",
                     height: orientation === "vertical" ? "4px" : "100%",
                 }}
-                onMouseDown={startResize}
             ></div>
-            <div className="flex flex-grow" style={{ flexBasis: `${100 - size}%` }}>
+            <div className="flex-grow" style={{ flexBasis: `${100 - size}%` }}>
                 {children[1]}
             </div>
         </div>

@@ -1,19 +1,17 @@
 // components/Timeline.tsx
 import React, { useState, useEffect, useRef } from "react";
 import TimelineObject from "./TimelineObject";
+import PlayBar from "./PlayBar";
+
 const Timeline = ({ timeline, isPlaying, currentFrame, setCurrentFrame }) => {
     const [timelineObjects, setTimelineObjects] = useState([]);
-    const [lastObjFrame, setLastObjFrame] = useState(0);
-    const [TLcache, setTLcache] = useState([]);
-    const [exportRange, setExportRange] = useState({ start: 0, end: 0 });
     const [TimelineXScale, setTimelineXScale] = useState(1);
     const [TimelineYScale, setTimelineYScale] = useState(1);
     const [TimelineXoffset, setTimelineXoffset] = useState(0);
     const [TimelineYoffset, setTimelineYoffset] = useState(0);
 
-    const [TimelineScale, setTimelineScale] = useState([0, 0]);
+    const [TimelineScale] = useState([0, 0]);
     const Ref = useRef(null);
-    const dragRef = useRef({ isDragging: false, start: 0 });
 
     useEffect(() => {
         makeTLObjects(); // コンポーネントがマウントされた後にタイムラインオブジェクトを生成
@@ -25,8 +23,8 @@ const Timeline = ({ timeline, isPlaying, currentFrame, setCurrentFrame }) => {
 
         return () => {
             if (Ref.current) {
-                Ref.current.removeEventListener("wheel", handleWheel, { passive: false });
                 Ref.current.removeEventListener("scroll", handleScroll);
+                Ref.current.removeEventListener("wheel", handleWheel, { passive: false });
             }
         };
     });
@@ -37,27 +35,6 @@ const Timeline = ({ timeline, isPlaying, currentFrame, setCurrentFrame }) => {
         const scrollTop = Ref.current ? Ref.current.scrollTop : 0;
         setTimelineXoffset(scrollLeft);
         setTimelineYoffset(scrollTop);
-    };
-    const handleMouseDown = (event) => {
-        if (!isPlaying) {
-            dragRef.current.isDragging = true;
-            dragRef.current.start = event.clientX;
-            document.addEventListener("mousemove", handleMouseMove);
-            document.addEventListener("mouseup", handleMouseUp);
-        }
-    }; // マウスムーブイベントをハンドルする関数
-    const handleMouseMove = (event) => {
-        if (dragRef.current.isDragging) {
-            const dx = event.clientX - dragRef.current.start;
-            // スクロールオフセットとスケールを考慮して currentFrame を更新
-            const newFrame = currentFrame + Math.floor(dx / TimelineXScale);
-            setCurrentFrame(Math.max(0, newFrame)); // currentFrame を 0 以下にはしない
-        }
-    }; // マウスアップイベントをハンドルする関数
-    const handleMouseUp = () => {
-        dragRef.current.isDragging = false;
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
     };
     // searchLayer 関数
     const searchLayer = (obj, timeLineTmp, lastObjFrame, TLTs) => {
@@ -79,7 +56,7 @@ const Timeline = ({ timeline, isPlaying, currentFrame, setCurrentFrame }) => {
     };
 
     // setObj 関数
-    const setObj = (obj, layer, id, timeLineTmp, lastObjFrame, TLTs) => {
+    const setObj = (obj, layer, id, timeLineTmp, lastObjFrame) => {
         for (let x = 0; x < obj.len; x++) {
             timeLineTmp[(lastObjFrame + 1) * layer + obj.start + x] = id + 1;
         }
@@ -89,7 +66,7 @@ const Timeline = ({ timeline, isPlaying, currentFrame, setCurrentFrame }) => {
         // オブジェクト生成ロジック
         let newTimelineObjects = [];
         let newLastObjFrame = 0;
-        let TLTs = 10; // ここで TLTs を適切な値に設定します（レイヤーの最大数）
+        let TLTs = 10; //TLTs を適切な値に設定（レイヤーの最大数）
 
         // timeline データを処理してオブジェクトを生成
         timeline.forEach((objData, index) => {
@@ -118,7 +95,7 @@ const Timeline = ({ timeline, isPlaying, currentFrame, setCurrentFrame }) => {
         newTimelineObjects = newTimelineObjects.map((obj, id) => {
             const layer = searchLayer(obj, timeLineTmp, newLastObjFrame, TLTs);
             if (layer !== false) {
-                setObj(obj, layer, id, timeLineTmp, newLastObjFrame, TLTs);
+                setObj(obj, layer, id, timeLineTmp, newLastObjFrame);
                 return { ...obj, layer };
             }
             return obj;
@@ -126,9 +103,6 @@ const Timeline = ({ timeline, isPlaying, currentFrame, setCurrentFrame }) => {
 
         // 状態を更新
         setTimelineObjects(newTimelineObjects);
-        setLastObjFrame(newLastObjFrame);
-        setTLcache(new Array(newLastObjFrame).fill(null));
-        setExportRange({ ...exportRange, end: newLastObjFrame });
     };
 
     function handleWheel(e) {
@@ -172,25 +146,6 @@ const Timeline = ({ timeline, isPlaying, currentFrame, setCurrentFrame }) => {
         }
         // その他のホイール操作は無視
     }
-    const renderPlaybackBar = () => {
-        const scrollOffset = Ref.current ? Ref.current.scrollLeft : 0;
-        const playbackBarStyle = {
-            position: "sticky",
-            top: 0,
-            height: "100%",
-            width: "2px",
-            backgroundColor: "red",
-            zIndex: 15,
-            left: `${currentFrame * TimelineXScale - scrollOffset}px`,
-        } as React.CSSProperties;
-        return (
-            <div
-                style={playbackBarStyle}
-                onMouseDown={handleMouseDown}
-                className="cursor-e-resize"
-            ></div>
-        );
-    };
 
     const style = {
         "--tl-x-scale": TimelineXScale,
@@ -200,9 +155,18 @@ const Timeline = ({ timeline, isPlaying, currentFrame, setCurrentFrame }) => {
     } as React.CSSProperties;
     return (
         <>
-            <div className="w-full h-6 bg-blue-300">✅{currentFrame}</div>
+            <div className="w-full h-6 bg-blue-300" style={{ fontFamily: "Segoe UI Emoji" }}>
+                {isPlaying ? "▶️" : "⏸️"}
+                {currentFrame}
+            </div>
             <div id="timeline" className="h-full overflow-x-scroll" ref={Ref} style={style}>
-                {renderPlaybackBar()}
+                <PlayBar
+                    isPlaying={isPlaying}
+                    currentFrame={currentFrame}
+                    setCurrentFrame={setCurrentFrame}
+                    TimelineXScale={TimelineXScale}
+                    Ref={Ref}
+                />
                 <div id="timelineObjects">
                     {timelineObjects.map((obj, index) => (
                         <TimelineObject key={index} obj={obj} />

@@ -20,6 +20,10 @@ const App: React.FC = () => {
     const VideoFPS = 30;
     const frameRef = useRef(null); // currentFrame の更新を制御するために useRef を使用
 
+    const [size, setSize] = useState(50); // Default size
+    const handleResize = (newSize) => {
+        setSize(newSize);
+    };
     useEffect(() => {
         const togglePlay = (event) => {
             if (event.code === "Space") {
@@ -58,44 +62,27 @@ const App: React.FC = () => {
         [obj_text, 30, 300, "bem130", 1400, 600, 70, 50, 50],
         [obj_text, 30, 300, "bem130", 1400, 600, 70, 50, 50],
     ];
-
     return (
-        <div className="App w-full h-dvh flex flex-col">
-            <Resizable orientation="vertical">
-                {[
-                    // 最初の子要素としての関数
-                    (size) => (
-                        <div className="flex w-full">
-                            <Resizable orientation="horizontal">
-                                {[
-                                    // 内側の Resizable の最初の子要素
-                                    (innerSize) => (
-                                        <div id="imgOutArea" className="w-full">
-                                            <PreviewWindow
-                                                timeline={timeline}
-                                                currentFrame={currentFrame}
-                                                size={[size, innerSize]}
-                                            />
-                                        </div>
-                                    ),
-                                    // 内側の Resizable の二番目の子要素
-                                    <TextEditor />, // 直接Reactエレメントを渡す場合、この部分は関数でラップする必要があるかもしれません
-                                ]}
-                            </Resizable>
-                        </div>
-                    ),
-                    // 二番目の子要素としての関数
-                    <div className="w-full">
-                        <Timeline
+        <>
+            <Resizable orientation="vertical" onResize={undefined}>
+                <Resizable orientation="horizontal" onResize={handleResize}>
+                    <div id="imgOutArea" className="h-full w-full">
+                        <PreviewWindow
                             timeline={timeline}
-                            isPlaying={isPlaying}
                             currentFrame={currentFrame}
-                            setCurrentFrame={setCurrentFrame}
+                            size={size}
                         />
-                    </div>,
-                ]}
+                    </div>
+                    <TextEditor />
+                </Resizable>
+                <Timeline
+                    timeline={timeline}
+                    isPlaying={isPlaying}
+                    currentFrame={currentFrame}
+                    setCurrentFrame={setCurrentFrame}
+                />
             </Resizable>
-        </div>
+        </>
     );
 };
 
